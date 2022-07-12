@@ -1,0 +1,203 @@
+!
+version RGOS 10.3(4b10), Release(164555)(Wed Jul 31 11:20:31 CST 2013 -ngcf62)
+flow-audit vpn inside-ip
+flow-audit enable
+no attack-block enable
+attack-block unblock 60
+attack-block threshold drop-kbps 10000
+attack-block threshold drop-pps 5000
+no nat-log enable
+feedback frequency 60
+layer23 classify enable
+identify-application enable
+identify-application terminate enable
+identify-application sig-rule enable
+!
+identify-application custom-group TC_AD_Key
+ app-add WEB应用
+ app-add HTTP下载
+ app-add P2P-HTTP下载
+ app-add 下载工具_MOBILE
+!
+webmaster level 0 username admin password 7 14134e00281c
+webmaster level 1 username manager password 7 122a041c4b0a2400
+webmaster level 2 username guest password 7 01275646240c
+!
+aaa new-model
+!
+!
+!
+!
+http update mode auto-update
+http update server 0.0.0.0 port 80
+http update time daily 14:24
+http update auto-update route-db character-db url-db feedback content-db
+dev-audit enable
+!
+time-range any
+ periodic Daily 0:00 to 23:59 
+!
+mail-service enable
+!
+dns-proxy
+!
+!
+!
+!
+dialer-list 1 protocol ip permit
+!
+specify interface GigabitEthernet 0/1 lan
+specify interface GigabitEthernet 0/3 lan
+specify interface GigabitEthernet 0/5 wan
+specify interface GigabitEthernet 0/6 wan
+convert port 1 to lan
+convert port 3 to lan
+web-coding gb2312
+!
+no service password-encryption
+service dhcp
+ip nat-log on
+!
+!
+ip dhcp pool sta
+ lease infinite
+ network 172.16.1.0 255.255.255.0 
+ dns-server 114.114.114.114 
+ default-router 172.16.1.254 
+!
+ip name-server 114.114.114.114
+!
+!
+!
+!
+ip access-list standard 1
+ 10 permit any 
+!
+!
+control-plane
+ anti-arp-spoof scan 20
+ attack threshold 500
+!
+control-plane protocol
+ no acpp
+!
+control-plane manage
+ no port-filter
+ no arp-car
+ no acpp
+!
+control-plane data
+ no glean-car
+ no acpp
+!
+vlan-terminal enable
+!
+vwan mss 1360
+url-filter-notice display You are forbidden to visit the website, please contact webmaster!
+!
+!
+url-audit exact-filter
+!
+!
+!
+subscriber static name Default_Group parent /
+subscriber static name without_auth_user parent /Default_Group password 7 01374a573f17132a3c2e00062f3a024b1e32
+subscriber static name Vpn_Group parent /
+subscriber allow without_auth_user privilege webauth
+sam-online recycle 20
+sam-offline recycle 20
+network-group name  Out_Server parent /
+route-auto-choose cnii dialer 1
+enable service web-server
+!
+!
+!
+!
+!
+!
+!
+!
+flow-control di1
+ channel-tree inbound
+  auto-pir enable interval 1 root-rate 90 
+  !
+  channel-group root parent null cir 4000 pir 4000 pri 4 schedule-type fifo
+  channel-default root
+ !
+ channel-tree outbound
+  auto-pir enable interval 1 root-rate 90 
+  !
+  channel-group root parent null cir 500 pir 500 pri 4 schedule-type fifo
+  channel-default root
+ !
+!
+interface GigabitEthernet 0/0
+ ip nat inside
+ no ip unreachables
+ no ip redirects
+ no ip mask-reply
+ ip address 172.16.1.254 255.255.255.0
+ reverse-path
+ vlan-terminal vlan-list 100
+!
+interface GigabitEthernet 0/1
+ duplex auto
+ speed auto
+ ip nat inside
+ no ip unreachables
+ no ip redirects
+ no ip mask-reply
+ ip address 192.168.10.2 255.255.254.0
+ reverse-path
+!
+interface GigabitEthernet 0/3
+ duplex auto
+ speed auto
+ no ip unreachables
+ no ip redirects
+ no ip mask-reply
+!
+interface GigabitEthernet 0/5
+ duplex auto
+ speed auto
+ pppoe enable
+ pppoe-client dial-pool-number 1 no-ddr
+!
+interface GigabitEthernet 0/6
+ duplex auto
+ speed auto
+!
+interface dialer 1
+ mtu 1488
+ encapsulation PPP
+ ppp chap hostname 0203201393938@168.gd
+ ppp chap password MEQJUNIF
+ ppp pap sent-username 0203201393938@168.gd password MEQJUNIF
+ ip nat outside
+ ip address negotiate
+ dialer pool 1
+ dialer-group 1
+ bandwidth 100000 
+!
+!
+ip nat pool nat_pool prefix-length 24
+ address interface dialer 1 match interface dialer 1
+!
+ip nat inside source list 1 pool nat_pool overload
+!
+!
+!
+!
+!
+!
+!
+ip route 0.0.0.0 0.0.0.0 dialer 1
+!
+!
+ref parameter 50 200
+line con 0
+line vty 0 4
+!
+!
+end
+
